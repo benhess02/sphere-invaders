@@ -33,7 +33,7 @@ void main() {
         vec3 screenPos = vec3(uv.x, uv.y, sqrt(1.0 - magSq));
         vec3 pos = cameraXBasis * screenPos.x + cameraYBasis * screenPos.y + cameraPos * screenPos.z;
         if(pos.x > 0. ^^ pos.y > 0. ^^ pos.z > 0.) {
-            value += 0.04;
+            value += 0.05;
         }
         outColor = vec4(value, value, value, 1.0);
     } else {

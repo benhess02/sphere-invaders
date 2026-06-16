@@ -112,6 +112,8 @@ setInterval(() => {
         let invader = new Invader();
         invader.copyFrom(player);
         invader.invert();
+        invader.rotate(Math.random() * Math.PI * 2);
+        invader.move(0, 0.1);
         invaders.push(invader);
     }
 }, 2000);
