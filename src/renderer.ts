@@ -77,12 +77,30 @@ void main() {
     }
 }`;
 
+type CameraShaderInfo = {
+    aspectLocation: WebGLUniformLocation,
+    cameraPosLocation: WebGLUniformLocation,
+    cameraXBasisLocation: WebGLUniformLocation,
+    cameraYBasisLocation: WebGLUniformLocation
+};
+
+type SpriteShaderInfo = {
+    texLocation: WebGLUniformLocation,
+    posLocation: WebGLUniformLocation,
+    xBasisLocation: WebGLUniformLocation,
+    yBasisLocation: WebGLUniformLocation
+};
+
 let cvs: HTMLCanvasElement;
 let gl: WebGL2RenderingContext;
 
 let vertexBuffer: WebGLBuffer;
 let backgroundShader: WebGLProgram;
 let spriteShader: WebGLProgram;
+
+let backgroundCameraShaderInfo: CameraShaderInfo;
+let spriteCameraShaderInfo: CameraShaderInfo;
+let spriteShaderInfo: SpriteShaderInfo;
 
 function compileShader(vertexSource: string, fragmentSource: string): WebGLProgram {
     let vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
@@ -117,35 +135,55 @@ function compileShader(vertexSource: string, fragmentSource: string): WebGLProgr
     return program;
 }
 
-function setCameraUniforms(shader: WebGLProgram, camera: GameObject) {
-    gl.uniform1f(gl.getUniformLocation(shader, "aspect"), cvs.width / cvs.height);
-    gl.uniform3f(gl.getUniformLocation(shader, "cameraPos"), camera.position.x, camera.position.y, camera.position.z);
-    gl.uniform3f(gl.getUniformLocation(shader, "cameraXBasis"), camera.xBasis.x, camera.xBasis.y, camera.xBasis.z);
-    gl.uniform3f(gl.getUniformLocation(shader, "cameraYBasis"), camera.yBasis.x, camera.yBasis.y, camera.yBasis.z);
+function setCameraUniforms(shaderInfo: CameraShaderInfo, camera: GameObject) {
+    gl.uniform1f(shaderInfo.aspectLocation, cvs.width / cvs.height);
+    gl.uniform3f(shaderInfo.cameraPosLocation, camera.position.x, camera.position.y, camera.position.z);
+    gl.uniform3f(shaderInfo.cameraXBasisLocation, camera.xBasis.x, camera.xBasis.y, camera.xBasis.z);
+    gl.uniform3f(shaderInfo.cameraYBasisLocation, camera.yBasis.x, camera.yBasis.y, camera.yBasis.z);
 }
 
-function setSpriteUniforms(shader: WebGLProgram, sprite: Sprite) {
+function setSpriteUniforms(shaderInfo: SpriteShaderInfo, sprite: Sprite) {
     gl.bindTexture(gl.TEXTURE_2D, sprite.texture);
-    gl.uniform1i(gl.getUniformLocation(shader, "tex"), 0);
+    gl.uniform1i(shaderInfo.texLocation, 0);
 
-    gl.uniform3f(gl.getUniformLocation(shader, "spritePos"), sprite.position.x, sprite.position.y, sprite.position.z);
-    gl.uniform3f(gl.getUniformLocation(shader, "spriteXBasis"), sprite.xBasis.x, sprite.xBasis.y, sprite.xBasis.z);
-    gl.uniform3f(gl.getUniformLocation(shader, "spriteYBasis"), sprite.yBasis.x, sprite.yBasis.y, sprite.yBasis.z);
+    gl.uniform3f(shaderInfo.posLocation, sprite.position.x, sprite.position.y, sprite.position.z);
+    gl.uniform3f(shaderInfo.xBasisLocation, sprite.xBasis.x, sprite.xBasis.y, sprite.xBasis.z);
+    gl.uniform3f(shaderInfo.yBasisLocation, sprite.yBasis.x, sprite.yBasis.y, sprite.yBasis.z);
 }
 
 export function beginFrame(camera: GameObject) {
     gl.useProgram(backgroundShader);
-    setCameraUniforms(backgroundShader, camera);
+    setCameraUniforms(backgroundCameraShaderInfo, camera);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
     gl.useProgram(spriteShader);
-    setCameraUniforms(spriteShader, camera);
+    setCameraUniforms(spriteCameraShaderInfo, camera);
 }
 
 export function drawSprite(sprite: Sprite) {
     gl.useProgram(spriteShader);
-    setSpriteUniforms(spriteShader, sprite);
+    setSpriteUniforms(spriteShaderInfo, sprite);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+function getCameraShaderInfo(shader: WebGLProgram): CameraShaderInfo {
+    gl.useProgram(shader);
+    return {
+        aspectLocation: gl.getUniformLocation(shader, "aspect")!,
+        cameraPosLocation: gl.getUniformLocation(shader, "cameraPos")!,
+        cameraXBasisLocation: gl.getUniformLocation(shader, "cameraXBasis")!,
+        cameraYBasisLocation: gl.getUniformLocation(shader, "cameraYBasis")!,
+    };
+}
+
+function getSpriteShaderInfo(shader: WebGLProgram): SpriteShaderInfo {
+    gl.useProgram(shader);
+    return {
+        texLocation: gl.getUniformLocation(shader, "tex")!,
+        posLocation: gl.getUniformLocation(shader, "spritePos")!,
+        xBasisLocation: gl.getUniformLocation(shader, "spriteXBasis")!,
+        yBasisLocation: gl.getUniformLocation(shader, "spriteYBasis")!,
+    };
 }
 
 export function initRenderer(canvas: HTMLCanvasElement) {
@@ -168,6 +206,10 @@ export function initRenderer(canvas: HTMLCanvasElement) {
 
     backgroundShader = compileShader(VERTEX_SOURCE, BACKGROUND_SOURCE);
     spriteShader = compileShader(VERTEX_SOURCE, SPRITE_SOURCE);
+
+    backgroundCameraShaderInfo = getCameraShaderInfo(backgroundShader);
+    spriteCameraShaderInfo = getCameraShaderInfo(spriteShader);
+    spriteShaderInfo = getSpriteShaderInfo(spriteShader);
 }
 
 export function loadTexture(src: string): WebGLTexture {
