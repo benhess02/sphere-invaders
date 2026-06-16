@@ -1,0 +1,17 @@
+{
+  "name": "sphere-invaders",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "keywords": [],
+  "author": "Ben Hess",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {},
+  "devDependencies": {
+    "esbuild": "0.27.3"
+  }
+}
